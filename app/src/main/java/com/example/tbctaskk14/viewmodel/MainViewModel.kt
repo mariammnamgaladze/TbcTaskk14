@@ -1,7 +1,9 @@
 package com.example.tbctaskk14.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tbctaskk14.ResponseCatcher
 import com.example.tbctaskk14.model.Data
 import com.example.tbctaskk14.network.RetroObj
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -12,8 +14,8 @@ import kotlinx.coroutines.launch
 
 class MainViewModel: ViewModel() {
 
-    private val _myFlow = MutableSharedFlow<Data>()
-    val myFlow: SharedFlow<Data> get() = _myFlow
+    private val _myFlow = MutableStateFlow<ResponseCatcher>(ResponseCatcher.InProcess())
+    val myFlow: StateFlow<ResponseCatcher> get() = _myFlow
 
 
     fun info() {
@@ -21,7 +23,9 @@ class MainViewModel: ViewModel() {
             val response = RetroObj.getData().info()
             val body: Data? = response.body()
             if (response.isSuccessful && body != null) {
-                _myFlow.emit(body)
+                _myFlow.emit(ResponseCatcher.Success(response.body()?.content ?: emptyList()))
+            }else{
+                _myFlow.emit(ResponseCatcher.Error(response.errorBody().toString()))
             }
         }
     }

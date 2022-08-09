@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.tbctaskk14.ResponseCatcher
 import com.example.tbctaskk14.databinding.FragmentMainBinding
 import com.example.tbctaskk14.model.Data
 import com.example.tbctaskk14.viewmodel.MainViewModel
@@ -33,7 +34,7 @@ class MainFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        _binding = FragmentMainBinding.inflate(inflater, container, false)
+        _binding  = FragmentMainBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -58,25 +59,28 @@ class MainFragment : Fragment() {
 
     private fun onClick() {
         myAdapter.onItemClickListener = {
-            findNavController().navigate(
-                MainFragmentDirections.actionMainFragmentToSecondFragment(
-                    it
-                )
-            )
+            findNavController().navigate(MainFragmentDirections.actionMainFragmentToSecondFragment(it))
         }
     }
 
     private fun getInfo() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.myFlow.collect {
-                    successCatcher(it.content)
+                viewModel.myFlow.collect { item ->
+                    when(item) {
+                        is ResponseCatcher.Success -> successCatcher(item.resultList)
+                        is ResponseCatcher.Error -> errorCatcher(item.errorBody)
+                        else -> {}
+                    }
+                    binding.progressBar.isVisible = item.isLoading
                 }
             }
-
         }
     }
 
+    private fun errorCatcher(errorBody: String) {
+        Snackbar.make(binding.root, errorBody, Snackbar.LENGTH_SHORT).show()
+    }
 
     private fun successCatcher(resultList: List<Data.Content>) {
         myAdapter.submitList(resultList)
